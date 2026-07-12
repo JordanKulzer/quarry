@@ -1,0 +1,93 @@
+{
+  "name": "quarry-vscode",
+  "displayName": "Quarry",
+  "description": "Multi-term codebase search — find files containing all of your search terms, with color-coded chips and snippet previews.",
+  "version": "0.1.0",
+  "publisher": "jordankulzer",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "search",
+    "multi-term",
+    "find",
+    "multi search",
+    "code search"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jordankulzer/quarry"
+  },
+  "homepage": "https://github.com/jordankulzer/quarry",
+  "bugs": {
+    "url": "https://github.com/jordankulzer/quarry/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./dist/extension.js",
+  "icon": "media/icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "quarry-sidebar",
+          "title": "Quarry",
+          "icon": "media/quarry-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "quarry-sidebar": [
+        {
+          "type": "webview",
+          "id": "quarry.searchPanel",
+          "name": "Search"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "quarry.openMenu",
+        "title": "Quarry Options",
+        "icon": "$(ellipsis)"
+      },
+      {
+        "command": "quarry.focus",
+        "title": "Quarry: Focus Search Panel"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "quarry.focus",
+        "key": "ctrl+shift+f10",
+        "mac": "cmd+shift+f10"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "quarry.openMenu",
+          "when": "view == quarry.searchPanel",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@quarry/core": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  },
+  "scripts": {
+    "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "vscode:prepublish": "npm run compile"
+  }
+}
