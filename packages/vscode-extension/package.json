@@ -16,11 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordankulzer/quarry"
+    "url": "https://github.com/JordanKulzer/quarry"
   },
-  "homepage": "https://github.com/jordankulzer/quarry",
+  "homepage": "https://github.com/JordanKulzer/quarry",
   "bugs": {
-    "url": "https://github.com/jordankulzer/quarry/issues"
+    "url": "https://github.com/JordanKulzer/quarry/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
