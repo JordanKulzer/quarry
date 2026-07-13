@@ -3,103 +3,133 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 export function findRipgrepBinary(): string | null {
-  const binName = process.platform === 'win32' ? 'rg.exe' : 'rg';
-
-  // Attempt 1 - VS Code bundled ripgrep
   const appRoot = vscode.env.appRoot;
-  console.log('Quarry: appRoot =', appRoot);
 
-  const vscodeRg = path.join(
-    appRoot,
-    'node_modules',
-    '@vscode',
-    'ripgrep',
-    'bin',
-    binName
-  );
-  console.log('Quarry: checking path 1 =', vscodeRg);
-  console.log('Quarry: path 1 exists =', fs.existsSync(vscodeRg));
-  if (fs.existsSync(vscodeRg)) {
-    return vscodeRg;
-  }
+  // Determine platform and arch strings
+  const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+  const platformArch =
+    process.platform === 'win32'
+      ? `win32-${arch}`
+      : process.platform === 'darwin'
+        ? `darwin-${arch}`
+        : `linux-${arch}`;
 
-  // Also try alternative VS Code paths
-  const altPaths = [
+  const rgBin = process.platform === 'win32' ? 'rg.exe' : 'rg';
+
+  // All known locations to check in priority order
+  const pathsToCheck = [
+    // ripgrep-universal (Mac and modern VS Code)
+    path.join(
+      appRoot,
+      'node_modules',
+      '@vscode',
+      'ripgrep-universal',
+      'bin',
+      platformArch,
+      rgBin
+    ),
+
+    // Standard ripgrep (older VS Code / Linux)
+    path.join(appRoot, 'node_modules', '@vscode', 'ripgrep', 'bin', rgBin),
+
+    // asar.unpacked (production builds)
     path.join(
       appRoot,
       'node_modules.asar.unpacked',
       '@vscode',
       'ripgrep',
       'bin',
-      binName
+      rgBin
     ),
-    path.join(appRoot, '..', 'bin', binName),
+
+    // asar.unpacked universal
+    path.join(
+      appRoot,
+      'node_modules.asar.unpacked',
+      '@vscode',
+      'ripgrep-universal',
+      'bin',
+      platformArch,
+      rgBin
+    ),
+
+    // Windows specific - Program Files
+    'C:\\Program Files\\Microsoft VS Code\\resources\\app\\node_modules\\@vscode\\ripgrep\\bin\\rg.exe',
+
+    // Windows specific - User install
+    path.join(
+      process.env.LOCALAPPDATA || '',
+      'Programs',
+      'Microsoft VS Code',
+      'resources',
+      'app',
+      'node_modules',
+      '@vscode',
+      'ripgrep-universal',
+      'bin',
+      platformArch,
+      rgBin
+    ),
+
+    // Windows specific - ripgrep-universal
+    path.join(
+      process.env.LOCALAPPDATA || '',
+      'Programs',
+      'Microsoft VS Code',
+      'resources',
+      'app',
+      'node_modules',
+      '@vscode',
+      'ripgrep',
+      'bin',
+      rgBin
+    ),
+
+    // Common system install locations (GUI-launched VS Code may not
+    // have Homebrew/user paths on PATH, so `which rg` can miss these)
+    '/opt/homebrew/bin/rg',
+    '/usr/local/bin/rg',
+    '/usr/bin/rg',
   ];
-  for (let i = 0; i < altPaths.length; i++) {
-    const p = altPaths[i];
-    const exists = fs.existsSync(p);
-    console.log(`Quarry: checking alt path ${i} =`, p);
-    console.log(`Quarry: alt path ${i} exists =`, exists);
-    if (exists) {
+
+  // Check each path
+  for (const p of pathsToCheck) {
+    console.log('Quarry: checking', p, '=', fs.existsSync(p));
+    if (p && fs.existsSync(p)) {
+      console.log('Quarry: found ripgrep at', p);
       return p;
     }
   }
 
-  // @vscode/ripgrep-universal (actual path on Mac)
-  const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
-  const platform =
-    process.platform === 'win32'
-      ? 'win32'
-      : process.platform === 'darwin'
-        ? 'darwin'
-        : 'linux';
-
-  const universalRg = path.join(
-    appRoot,
-    'node_modules',
-    '@vscode',
-    'ripgrep-universal',
-    'bin',
-    `${platform}-${arch}`,
-    binName
-  );
-  console.log('Quarry: checking universal path =', universalRg);
-  console.log('Quarry: universal path exists =', fs.existsSync(universalRg));
-  if (fs.existsSync(universalRg)) {
-    return universalRg;
-  }
-
-  // Attempt 2 - @vscode/ripgrep package
+  // Try @vscode/ripgrep npm package
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { rgPath } = require('@vscode/ripgrep');
-    console.log('Quarry: @vscode/ripgrep path =', rgPath);
-    console.log('Quarry: @vscode/ripgrep exists =', fs.existsSync(rgPath));
     if (rgPath && fs.existsSync(rgPath)) {
+      console.log('Quarry: found ripgrep via npm package at', rgPath);
       return rgPath;
     }
-  } catch (e) {
-    console.log('Quarry: @vscode/ripgrep require failed =', (e as Error).message);
+  } catch {
+    console.log('Quarry: @vscode/ripgrep package not available');
   }
 
-  // Attempt 3 - system rg
+  // Try system ripgrep
   try {
+    const whichCmd = process.platform === 'win32' ? 'where rg' : 'which rg';
     const result = require('child_process')
-      .execSync(process.platform === 'win32' ? 'where rg' : 'which rg', {
-        encoding: 'utf8',
-      })
-      .trim()
-      .split(/\r?\n/)[0];
-    console.log('Quarry: system rg =', result);
+      .execSync(whichCmd, { encoding: 'utf8' })
+      .trim();
     if (result) {
-      return result;
+      console.log('Quarry: found system ripgrep at', result);
+      return result.split('\n')[0]; // take first result on Windows
     }
-  } catch (e) {
-    console.log('Quarry: system rg not found =', (e as Error).message);
+  } catch {
+    console.log('Quarry: system ripgrep not found');
   }
 
+  console.log('Quarry: ripgrep not found, using fallback scanner');
   console.log(
-    'Quarry: tip — run "brew install ripgrep" to ensure rg is available as system fallback'
+    'Quarry: tip — install ripgrep: brew install ripgrep (Mac) or choco install ripgrep (Windows)'
   );
   return null;
 }

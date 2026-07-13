@@ -2,10 +2,11 @@
 
 ## [0.2.2] - 2026-07-13
 ### Changed
-- Ripgrep discovery now checks the @vscode/ripgrep-universal
-  path that VS Code ships on Mac
-- Logs a tip suggesting "brew install ripgrep" when no rg
-  binary is found
+- Ripgrep discovery now checks all known binary locations
+  across Mac, Windows, and Linux: ripgrep-universal, standard
+  ripgrep, asar.unpacked variants, Windows install paths, and
+  common system locations like /opt/homebrew/bin
+- Logs an install tip (brew/choco) when no rg binary is found
 
 ## [0.2.1] - 2026-07-13
 ### Changed
