@@ -57,6 +57,25 @@ Report bugs at github.com/JordanKulzer/quarry/issues
 
 ## Release Notes
 
+### 0.1.5
+- Added a Stop button to cancel an in-progress search and 
+  return partial results
+
+### 0.1.4
+- Match results within each file now sorted by line number 
+  instead of grouped by term
+- Exclude patterns moved to a permanent inline sidebar input
+- Search status now shows the total file count being scanned
+- Slow search tip appears after 5 seconds suggesting 
+  exclude patterns
+
+### 0.1.3
+- README images now use absolute GitHub URLs so they 
+  render everywhere
+
+### 0.1.2
+- Rewrote README with clearer copy and better structure
+
 ### 0.1.1
 - Added demo GIF to README
 - Fixed term color coding to be consistent across all matches

@@ -13,6 +13,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   readonly historyKey = 'quarry.searchHistory';
   readonly excludeKey = 'quarry.excludePatterns';
   caseSensitive = false;
+  private isCancelled = false;
   private view?: vscode.WebviewView;
 
   constructor(
@@ -65,11 +66,27 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             count: files.length,
           });
           const engine = new SearchEngine(scanner);
-          this.resultsCache = await engine.searchFiles(files, {
-            terms: message.terms,
-            caseSensitive: !!message.caseSensitive,
-          });
+          this.isCancelled = false;
+          this.resultsCache = await engine.searchFiles(
+            files,
+            {
+              terms: message.terms,
+              caseSensitive: !!message.caseSensitive,
+            },
+            () => this.isCancelled
+          );
           this.currentResults = this.resultsCache;
+          if (this.isCancelled) {
+            this.resultsSent = this.resultsCache.length;
+            webviewView.webview.postMessage({
+              command: 'results',
+              results: this.resultsCache,
+              total: this.resultsCache.length,
+              hasMore: false,
+              cancelled: true,
+            });
+            break;
+          }
           if (this.resultsCache.length > 0) {
             const terms: string[] = message.terms;
             const history = this.context.globalState.get<string[][]>(this.historyKey, []);
@@ -99,6 +116,10 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             total: this.resultsCache.length,
             hasMore: this.resultsSent < this.resultsCache.length,
           });
+          break;
+        }
+        case 'stopSearch': {
+          this.isCancelled = true;
           break;
         }
         case 'loadMore': {
@@ -488,6 +509,18 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
     />
   </div>
   <button id="search-button">Search</button>
+  <button id="stop-btn" style="
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    color: var(--vscode-errorForeground);
+    border: 1px solid var(--vscode-errorForeground);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+  ">Stop search</button>
   <div id="status-row">
     <span id="pickaxe">&#x26CF;&#xFE0F;</span>
     <span id="status"></span>
@@ -542,6 +575,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var searchTipEl = document.getElementById('search-tip');
       var chipsEl = document.getElementById('chips');
       var searchButton = document.getElementById('search-button');
+      var stopBtn = document.getElementById('stop-btn');
       var statusEl = document.getElementById('status');
       var pickaxeEl = document.getElementById('pickaxe');
       var resultsEl = document.getElementById('results');
@@ -902,6 +936,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         slowSearchTimer = setTimeout(function () {
           if (searchTipEl) searchTipEl.style.display = 'block';
         }, 5000);
+        stopBtn.style.display = 'block';
         vscode.postMessage({
           command: 'search',
           terms: terms.slice(),
@@ -912,16 +947,22 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 
       searchButton.addEventListener('click', doSearch);
 
+      stopBtn.addEventListener('click', function () {
+        vscode.postMessage({ command: 'stopSearch' });
+      });
+
       window.addEventListener('message', function (event) {
         var message = event.data;
         if (message.command === 'results') {
           hideSearchTip();
+          stopBtn.style.display = 'none';
           if (message.append) {
             results = (results || []).concat(message.results);
             loadingMore = false;
           } else {
             setSearching(false);
             statusEl.textContent = '';
+            statusEl.style.color = '';
             results = message.results;
             capped = !!message.capped;
           }
@@ -929,6 +970,13 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           hasMore = message.hasMore;
           updateEmptyState();
           renderResults();
+          if (message.cancelled) {
+            statusEl.style.color = 'var(--vscode-descriptionForeground)';
+            statusEl.textContent =
+              'Search stopped \\u2014 ' + total +
+              ' files found before stopping. ' +
+              'Add exclude patterns to narrow your search.';
+          }
         } else if (message.command === 'setCaseSensitive') {
           caseSensitive = !!message.value;
         } else if (message.command === 'setExcludePatterns') {

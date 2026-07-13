@@ -42,12 +42,16 @@ export class SearchEngine {
 
   async searchFiles(
     files: FileCandidate[],
-    options: SearchOptions
+    options: SearchOptions,
+    shouldCancel?: () => boolean
   ): Promise<SearchResult[]> {
     const excludeRegexes = (options.excludePatterns ?? []).map(globToRegExp);
     const results: SearchResult[] = [];
 
     for (const file of files) {
+      if (shouldCancel?.()) {
+        break;
+      }
       if (options.maxResults !== undefined && results.length >= options.maxResults) {
         break;
       }
