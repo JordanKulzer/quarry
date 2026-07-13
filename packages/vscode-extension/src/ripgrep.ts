@@ -45,6 +45,30 @@ export function findRipgrepBinary(): string | null {
     }
   }
 
+  // @vscode/ripgrep-universal (actual path on Mac)
+  const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+  const platform =
+    process.platform === 'win32'
+      ? 'win32'
+      : process.platform === 'darwin'
+        ? 'darwin'
+        : 'linux';
+
+  const universalRg = path.join(
+    appRoot,
+    'node_modules',
+    '@vscode',
+    'ripgrep-universal',
+    'bin',
+    `${platform}-${arch}`,
+    binName
+  );
+  console.log('Quarry: checking universal path =', universalRg);
+  console.log('Quarry: universal path exists =', fs.existsSync(universalRg));
+  if (fs.existsSync(universalRg)) {
+    return universalRg;
+  }
+
   // Attempt 2 - @vscode/ripgrep package
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -74,5 +98,8 @@ export function findRipgrepBinary(): string | null {
     console.log('Quarry: system rg not found =', (e as Error).message);
   }
 
+  console.log(
+    'Quarry: tip — run "brew install ripgrep" to ensure rg is available as system fallback'
+  );
   return null;
 }
