@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6] - 2026-07-12
+### Changed
+- Stop button restyled to a small square icon next to the 
+  Search button instead of a large red button
+- Exclude input now full width with a permanent hint showing 
+  comma-separated format
+
 ## [0.1.5] - 2026-07-12
 ### Added
 - Stop button to cancel an in-progress search and return 

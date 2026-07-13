@@ -488,17 +488,18 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   <div id="chips"></div>
   <div id="exclude-row" style="
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    gap: 2px;
     margin-bottom: 6px;
     font-size: 11px;
     color: var(--vscode-descriptionForeground);
   ">
-    <span style="white-space: nowrap;">Exclude:</span>
+    <span>Exclude:</span>
     <input id="exclude-input" type="text"
       placeholder="node_modules, cache, dist&#8230;"
       style="
-        flex: 1;
+        width: 100%;
+        box-sizing: border-box;
         background: var(--vscode-input-background);
         color: var(--vscode-input-foreground);
         border: 1px solid var(--vscode-input-border);
@@ -507,20 +508,28 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         font-size: 11px;
       "
     />
+    <div style="
+      font-size: 10px;
+      color: var(--vscode-descriptionForeground);
+      margin-top: 2px;
+      opacity: 0.8;
+    ">Comma separated &#8212; e.g. cache, coverage, __tests__</div>
   </div>
-  <button id="search-button">Search</button>
-  <button id="stop-btn" style="
-    width: 100%;
-    padding: 6px;
-    background: transparent;
-    color: var(--vscode-errorForeground);
-    border: 1px solid var(--vscode-errorForeground);
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-top: 4px;
-    display: none;
-  ">Stop search</button>
+  <div id="search-row" style="display: flex; align-items: stretch; gap: 4px;">
+    <button id="search-button" style="flex: 1;">Search</button>
+    <button id="stop-btn" title="Stop search" style="
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      background: transparent;
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 3px;
+      color: var(--vscode-foreground);
+      cursor: pointer;
+      font-size: 10px;
+      display: none;
+    ">&#9632;</button>
+  </div>
   <div id="status-row">
     <span id="pickaxe">&#x26CF;&#xFE0F;</span>
     <span id="status"></span>
