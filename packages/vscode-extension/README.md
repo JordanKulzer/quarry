@@ -57,6 +57,20 @@ Report bugs at github.com/JordanKulzer/quarry/issues
 
 ## Release Notes
 
+### 0.1.7
+- Exclude patterns now use a chip UI with red styling to 
+  clearly communicate exclusion, matching the term chip 
+  interaction pattern
+- Stop button uses a larger outlined square SVG icon
+- Term color palette updated: teal (brand), orange, purple, 
+  amber, pink, blue
+
+### 0.1.6
+- Stop button restyled to a small square icon next to the 
+  Search button instead of a large red button
+- Exclude input now full width with a permanent hint showing 
+  comma-separated format
+
 ### 0.1.5
 - Added a Stop button to cancel an in-progress search and 
   return partial results
