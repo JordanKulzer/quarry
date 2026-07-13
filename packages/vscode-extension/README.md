@@ -1,69 +1,65 @@
 # Quarry
 
-**Multi-term codebase search for VS Code.**
+Search your codebase for files that contain multiple terms at once.
 
-Search your workspace for files containing multiple independent terms 
-simultaneously. Not a single pattern — add several concepts as chips 
-and Quarry finds every file containing ALL of them, showing exactly 
-where each term appears.
+Add terms as color-coded chips, run a search, and Quarry shows 
+every file in your workspace that contains all of them. Each result 
+shows snippet previews so you can see exactly where each term 
+appears, and clicking any snippet opens the file at that line.
 
 ![Quarry demo](media/screenshots/quarry-demo.gif)
 
 ![Quarry home](media/screenshots/home.png)
 
-![Quarry search results](media/screenshots/search.png)
-
 ## Why Quarry?
 
-VS Code's built-in search finds one pattern at a time. Quarry lets 
-you ask: *"which files mention both `auth` and `token` and `expiry`?"* 
-and shows you the answer instantly.
+VS Code's built-in search works great for one pattern at a time. 
+But when you need to find where multiple concepts overlap, like 
+files that mention both "auth" and "token" and "expiry", you end 
+up running searches one at a time and cross-referencing manually. 
+Quarry does it in one shot.
+
+![Quarry search results](media/screenshots/search.png)
 
 ## Features
 
-- **Multi-term search** — add terms as chips, find files containing all of them
-- **Color-coded results** — each term gets a distinct color across chips and snippets
-- **Multiple matches** — see up to 5 occurrences per term per file
-- **Click to navigate** — click any snippet row to open the file at that exact line
-- **Word highlight** — matched word highlights in the editor for 3 seconds
-- **Search history** — last 25 searches persist across sessions, one click to re-run
-- **Case sensitive mode** — toggle via the ⋯ menu
-- **Smart results** — auto-excludes node_modules, .git, dist, out, .next, build
+- Add multiple search terms as color-coded chips
+- See up to 5 matches per term per file, with snippet previews
+- Click any match to open the file at that exact line
+- Matched word highlights in the editor for a few seconds
+- Search history saved across sessions, one click to re-run
+- Case sensitive search via the options menu
+- Custom exclude patterns so you can skip folders you don't care about
+- Results capped at 150 files to keep things fast
 
-![Quarry navigation](media/screenshots/select.png)
+![Quarry select](media/screenshots/select.png)
 
-## Usage
+## How to use it
 
-1. Click the **Quarry** pickaxe icon in the Activity Bar
-2. Type a search term and press **Enter** — it becomes a chip
+1. Click the Quarry pickaxe icon in the Activity Bar
+2. Type a term and press Enter
 3. Add more terms the same way
-4. Click **Search**
-5. Click any snippet row to open that file at that exact line
+4. Click Search
+5. Click any result to jump to that line
 
 ![Quarry menu](media/screenshots/menu.png)
 
 ## Tips
 
-- Narrow large result sets by adding more terms
-- Use ⋯ → Recent Searches to re-run previous searches instantly  
-- Results are capped at 150 files — if you hit the cap, add more terms
-- Minimum term length is 2 characters
+- Too many results? Add another term to narrow it down
+- Use the options menu to re-run recent searches or toggle 
+  case sensitivity
+- Terms need to be at least 2 characters
 
-## Requirements
+## Issues
 
-No configuration required. Works on any workspace.
-
-## Extension Settings
-
-No settings required out of the box. Case sensitivity is toggled 
-via the ⋯ menu in the sidebar.
-
-## Known Issues
-
-Please report issues at 
-[github.com/jordankulzer/quarry/issues](https://github.com/jordankulzer/quarry/issues)
+Report bugs at github.com/JordanKulzer/quarry/issues
 
 ## Release Notes
 
+### 0.1.1
+- Added demo GIF to README
+- Fixed term color coding to be consistent across all matches
+
 ### 0.1.0
-Initial release of Quarry.
+- Initial release
