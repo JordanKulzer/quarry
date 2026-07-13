@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2026-07-13
+### Changed
+- Added detailed diagnostic logging to ripgrep binary discovery,
+  including alternative VS Code install paths
+
 ## [0.2.0] - 2026-07-12
 ### Changed
 - Rewrote search engine to use ripgrep for dramatically 
