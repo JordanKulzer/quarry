@@ -24,6 +24,12 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage(message);
   }
 
+  /** Stored as a raw comma-separated string; older versions stored an array. */
+  private getSavedExcludePatterns(): string {
+    const saved = this.context.globalState.get<string | string[]>(this.excludeKey, '');
+    return Array.isArray(saved) ? saved.join(', ') : saved;
+  }
+
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
     webviewView.webview.options = {
@@ -35,16 +41,33 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
       switch (message.command) {
+        case 'ready': {
+          webviewView.webview.postMessage({
+            command: 'setExcludePatterns',
+            value: this.getSavedExcludePatterns(),
+          });
+          break;
+        }
         case 'search': {
-          const excludePatterns = this.context.globalState.get<string[]>(
-            this.excludeKey,
-            []
-          );
-          const engine = new SearchEngine(new VscodeFileScanner(excludePatterns));
-          this.resultsCache = await engine.search({
+          const excludeValue =
+            typeof message.excludePatterns === 'string'
+              ? message.excludePatterns
+              : '';
+          await this.context.globalState.update(this.excludeKey, excludeValue);
+          const excludePatterns = excludeValue
+            .split(',')
+            .map((p: string) => p.trim())
+            .filter(Boolean);
+          const scanner = new VscodeFileScanner(excludePatterns);
+          const files = await scanner.getFiles();
+          webviewView.webview.postMessage({
+            command: 'scanCount',
+            count: files.length,
+          });
+          const engine = new SearchEngine(scanner);
+          this.resultsCache = await engine.searchFiles(files, {
             terms: message.terms,
             caseSensitive: !!message.caseSensitive,
-            excludePatterns,
           });
           this.currentResults = this.resultsCache;
           if (this.resultsCache.length > 0) {
@@ -442,10 +465,43 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 <body>
   <input id="term-input" type="text" placeholder="Type a term and press Enter…">
   <div id="chips"></div>
+  <div id="exclude-row" style="
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+  ">
+    <span style="white-space: nowrap;">Exclude:</span>
+    <input id="exclude-input" type="text"
+      placeholder="node_modules, cache, dist&#8230;"
+      style="
+        flex: 1;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-size: 11px;
+      "
+    />
+  </div>
   <button id="search-button">Search</button>
   <div id="status-row">
     <span id="pickaxe">&#x26CF;&#xFE0F;</span>
     <span id="status"></span>
+  </div>
+  <div id="search-tip" style="
+    display: none;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    text-align: center;
+    padding: 0 16px;
+    line-height: 1.5;
+  ">
+    Taking a while? Add folders to the Exclude field above
+    to skip large directories and speed things up.
   </div>
   <div id="empty-state" style="
     display: flex;
@@ -482,6 +538,8 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 
       var vscode = acquireVsCodeApi();
       var input = document.getElementById('term-input');
+      var excludeInput = document.getElementById('exclude-input');
+      var searchTipEl = document.getElementById('search-tip');
       var chipsEl = document.getElementById('chips');
       var searchButton = document.getElementById('search-button');
       var statusEl = document.getElementById('status');
@@ -497,6 +555,12 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var loadingMore = false;
       var capped = false;
       var caseSensitive = false;
+      var slowSearchTimer = null;
+
+      function hideSearchTip() {
+        clearTimeout(slowSearchTimer);
+        if (searchTipEl) searchTipEl.style.display = 'none';
+      }
 
       function updateEmptyState() {
         emptyStateEl.style.display = !results && !searching ? 'flex' : 'none';
@@ -834,10 +898,15 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         setSearching(true);
         statusEl.textContent = 'Searching\\u2026';
         resultsEl.textContent = '';
+        clearTimeout(slowSearchTimer);
+        slowSearchTimer = setTimeout(function () {
+          if (searchTipEl) searchTipEl.style.display = 'block';
+        }, 5000);
         vscode.postMessage({
           command: 'search',
           terms: terms.slice(),
           caseSensitive: caseSensitive,
+          excludePatterns: excludeInput.value,
         });
       }
 
@@ -846,6 +915,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       window.addEventListener('message', function (event) {
         var message = event.data;
         if (message.command === 'results') {
+          hideSearchTip();
           if (message.append) {
             results = (results || []).concat(message.results);
             loadingMore = false;
@@ -861,6 +931,11 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           renderResults();
         } else if (message.command === 'setCaseSensitive') {
           caseSensitive = !!message.value;
+        } else if (message.command === 'setExcludePatterns') {
+          excludeInput.value = message.value || '';
+        } else if (message.command === 'scanCount') {
+          statusEl.textContent =
+            'Scanning ' + message.count.toLocaleString() + ' files\\u2026';
         } else if (message.command === 'clearResults') {
           clearResults();
         } else if (message.command === 'runSearch') {
@@ -872,6 +947,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 
       renderChips();
       statusEl.textContent = 'Add terms above, then search.';
+      vscode.postMessage({ command: 'ready' });
     })();
   </script>
 </body>

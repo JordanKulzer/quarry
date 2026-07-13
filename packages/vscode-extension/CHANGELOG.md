@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.4] - 2026-07-12
+### Changed
+- Match results within each file now sorted by line number 
+  instead of grouped by term
+- Exclude patterns moved to permanent inline sidebar input 
+  for faster access on large repos
+- Search status now shows total file count being scanned
+- Slow search tip appears after 5 seconds suggesting 
+  exclude patterns
+
 ## [0.1.3] - 2026-07-12
 ### Changed
 - README images now use absolute GitHub URLs so they render everywhere

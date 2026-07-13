@@ -1,5 +1,5 @@
 import { FileScanner } from './FileScanner';
-import { SearchOptions, SearchResult, TermMatch } from './types';
+import { FileCandidate, SearchOptions, SearchResult, TermMatch } from './types';
 
 const MAX_SNIPPET_LENGTH = 200;
 const MAX_MATCHES_PER_TERM = 5;
@@ -36,8 +36,15 @@ export class SearchEngine {
   constructor(private scanner: FileScanner) {}
 
   async search(options: SearchOptions): Promise<SearchResult[]> {
-    const excludeRegexes = (options.excludePatterns ?? []).map(globToRegExp);
     const files = await this.scanner.getFiles();
+    return this.searchFiles(files, options);
+  }
+
+  async searchFiles(
+    files: FileCandidate[],
+    options: SearchOptions
+  ): Promise<SearchResult[]> {
+    const excludeRegexes = (options.excludePatterns ?? []).map(globToRegExp);
     const results: SearchResult[] = [];
 
     for (const file of files) {
@@ -100,6 +107,7 @@ export class SearchEngine {
         return null;
       }
     }
+    matches.sort((a, b) => a.lineNumber - b.lineNumber);
     return matches;
   }
 }

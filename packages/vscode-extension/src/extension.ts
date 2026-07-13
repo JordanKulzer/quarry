@@ -15,23 +15,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('quarry.openMenu', async () => {
-      const currentExcludePatterns = context.globalState.get<string[]>(
-        panel.excludeKey,
-        []
-      );
       const picks: (vscode.QuickPickItem & { action: string })[] = [
         { label: '$(history) Recent Searches', action: 'history' },
         {
           label: `$(case-sensitive) Case Sensitive: ${panel.caseSensitive ? 'On' : 'Off'}`,
           action: 'case',
-        },
-        {
-          label: `$(exclude) Exclude Patterns: ${
-            currentExcludePatterns.length
-              ? currentExcludePatterns.join(', ')
-              : '(none)'
-          }`,
-          action: 'excludes',
         },
         { label: '$(clear-all) Clear History', action: 'clearHistory' },
         { label: '$(close) Clear Results', action: 'clearResults' },
@@ -67,23 +55,6 @@ export function activate(context: vscode.ExtensionContext) {
             command: 'setCaseSensitive',
             value: panel.caseSensitive,
           });
-          break;
-        }
-        case 'excludes': {
-          const result = await vscode.window.showInputBox({
-            prompt:
-              'Comma-separated glob patterns to exclude (defaults like node_modules always apply)',
-            placeHolder: 'node_modules, .git, dist, coverage',
-            value: currentExcludePatterns.join(', '),
-          });
-          if (result === undefined) {
-            return;
-          }
-          const patterns = result
-            .split(',')
-            .map((p) => p.trim())
-            .filter(Boolean);
-          await context.globalState.update(panel.excludeKey, patterns);
           break;
         }
         case 'clearHistory': {
