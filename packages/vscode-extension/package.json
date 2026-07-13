@@ -1,7 +1,7 @@
 {
   "name": "quarry-vscode",
   "displayName": "Quarry",
-  "description": "Multi-term codebase search — find files containing all of your search terms, with color-coded chips and snippet previews.",
+  "description": "Add multiple search terms, find every file containing all of them, and jump straight to the matching lines.",
   "version": "0.2.2",
   "publisher": "jordankulzer",
   "categories": [

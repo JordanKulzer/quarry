@@ -1,6 +1,7 @@
 # Quarry
 
-Search your codebase for files that contain multiple terms at once.
+Add multiple search terms, find every file containing all of them, 
+and jump straight to the matching lines.
 
 Add terms as color-coded chips, run a search, and Quarry shows 
 every file in your workspace that contains all of them. Each result 
@@ -56,6 +57,20 @@ Quarry does it in one shot.
 Report bugs at github.com/JordanKulzer/quarry/issues
 
 ## Release Notes
+
+### 0.2.2
+- Ripgrep discovery now checks all known binary locations 
+  across Mac, Windows, and Linux
+
+### 0.2.1
+- Added diagnostic logging to ripgrep binary discovery
+
+### 0.2.0
+- Rewrote the search engine to use ripgrep for dramatically 
+  faster search on large workspaces
+- Search terms run in parallel and results are intersected
+- Falls back to the previous file scanner if ripgrep is 
+  not available
 
 ### 0.1.7
 - Exclude patterns now use a chip UI with red styling to 

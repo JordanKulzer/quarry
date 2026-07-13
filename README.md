@@ -1,7 +1,8 @@
 # Quarry
 
-A VS Code extension for searching your codebase with multiple 
-terms at once.
+A VS Code extension that lets you add multiple search terms, 
+find every file containing all of them, and jump straight to 
+the matching lines.
 
 Instead of running separate searches, add all your terms as chips 
 and Quarry finds every file that contains all of them. Each term 
