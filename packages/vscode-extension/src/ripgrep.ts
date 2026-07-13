@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 export function findRipgrepBinary(): string | null {
   const appRoot = vscode.env.appRoot;
 
-  // Determine platform and arch strings
   const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
   const platformArch =
     process.platform === 'win32'
@@ -92,11 +91,8 @@ export function findRipgrepBinary(): string | null {
     '/usr/bin/rg',
   ];
 
-  // Check each path
   for (const p of pathsToCheck) {
-    console.log('Quarry: checking', p, '=', fs.existsSync(p));
     if (p && fs.existsSync(p)) {
-      console.log('Quarry: found ripgrep at', p);
       return p;
     }
   }
@@ -106,11 +102,10 @@ export function findRipgrepBinary(): string | null {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { rgPath } = require('@vscode/ripgrep');
     if (rgPath && fs.existsSync(rgPath)) {
-      console.log('Quarry: found ripgrep via npm package at', rgPath);
       return rgPath;
     }
   } catch {
-    console.log('Quarry: @vscode/ripgrep package not available');
+    // package not installed or binary missing
   }
 
   // Try system ripgrep
@@ -120,16 +115,11 @@ export function findRipgrepBinary(): string | null {
       .execSync(whichCmd, { encoding: 'utf8' })
       .trim();
     if (result) {
-      console.log('Quarry: found system ripgrep at', result);
-      return result.split('\n')[0]; // take first result on Windows
+      return result.split('\n')[0];
     }
   } catch {
-    console.log('Quarry: system ripgrep not found');
+    // not on PATH
   }
 
-  console.log('Quarry: ripgrep not found, using fallback scanner');
-  console.log(
-    'Quarry: tip — install ripgrep: brew install ripgrep (Mac) or choco install ripgrep (Windows)'
-  );
   return null;
 }

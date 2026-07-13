@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.3] - 2026-07-13
+### Changed
+- Removed diagnostic logging from ripgrep binary discovery;
+  only the engine-selection log lines remain
+
 ## [0.2.2] - 2026-07-13
 ### Changed
 - Ripgrep discovery now checks all known binary locations
