@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0] - 2026-07-12
+### Changed
+- Rewrote search engine to use ripgrep for dramatically 
+  faster search on large workspaces
+- Search now runs in under a second on most repos regardless 
+  of size
+- Ripgrep respects .gitignore automatically
+- Falls back to previous file scanner if ripgrep is 
+  not available
+### Technical
+- Added RipgrepScanner and RipgrepSearchEngine
+- Search terms now run in parallel via Promise.all
+- Cancellation kills ripgrep child processes cleanly
+
 ## [0.1.7] - 2026-07-12
 ### Changed
 - Exclude patterns now use chip UI with red styling to 

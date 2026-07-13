@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { SearchEngine, SearchResult } from '@quarry/core';
 import { VscodeFileScanner } from './VscodeFileScanner';
+import { RipgrepSearchEngine } from './RipgrepSearchEngine';
+import { findRipgrepBinary } from './ripgrep';
 
 const RESULTS_PAGE_SIZE = 50;
 
@@ -14,6 +16,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   readonly excludeKey = 'quarry.excludePatterns';
   caseSensitive = false;
   private isCancelled = false;
+  private activeRipgrepEngine: RipgrepSearchEngine | null = null;
   private view?: vscode.WebviewView;
 
   constructor(
@@ -60,22 +63,43 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             .split(',')
             .map((p: string) => p.trim())
             .filter(Boolean);
-          const scanner = new VscodeFileScanner(excludePatterns);
-          const files = await scanner.getFiles();
-          webviewView.webview.postMessage({
-            command: 'scanCount',
-            count: files.length,
-          });
-          const engine = new SearchEngine(scanner);
           this.isCancelled = false;
-          this.resultsCache = await engine.searchFiles(
-            files,
-            {
-              terms: message.terms,
-              caseSensitive: !!message.caseSensitive,
-            },
-            () => this.isCancelled
-          );
+          const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+          const rgPath = findRipgrepBinary();
+          if (rgPath && workspaceFolder) {
+            console.log('Quarry: using ripgrep at', rgPath);
+            this.activeRipgrepEngine = new RipgrepSearchEngine(
+              rgPath,
+              workspaceFolder.uri.fsPath
+            );
+            try {
+              this.resultsCache = await this.activeRipgrepEngine.search({
+                terms: message.terms,
+                caseSensitive: !!message.caseSensitive,
+                excludePatterns,
+                shouldCancel: () => this.isCancelled,
+              });
+            } finally {
+              this.activeRipgrepEngine = null;
+            }
+          } else {
+            console.log('Quarry: using fallback scanner');
+            const scanner = new VscodeFileScanner(excludePatterns);
+            const files = await scanner.getFiles();
+            webviewView.webview.postMessage({
+              command: 'scanCount',
+              count: files.length,
+            });
+            const engine = new SearchEngine(scanner);
+            this.resultsCache = await engine.searchFiles(
+              files,
+              {
+                terms: message.terms,
+                caseSensitive: !!message.caseSensitive,
+              },
+              () => this.isCancelled
+            );
+          }
           this.currentResults = this.resultsCache;
           if (this.isCancelled) {
             this.resultsSent = this.resultsCache.length;
@@ -128,6 +152,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         }
         case 'stopSearch': {
           this.isCancelled = true;
+          this.activeRipgrepEngine?.cancel();
           break;
         }
         case 'loadMore': {

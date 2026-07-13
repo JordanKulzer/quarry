@@ -2,7 +2,7 @@
   "name": "quarry-vscode",
   "displayName": "Quarry",
   "description": "Multi-term codebase search — find files containing all of your search terms, with color-coded chips and snippet previews.",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "publisher": "jordankulzer",
   "categories": [
     "Other"
@@ -78,9 +78,11 @@
     }
   },
   "dependencies": {
-    "@quarry/core": "*"
+    "@quarry/core": "*",
+    "@vscode/ripgrep": "^1.15.0"
   },
   "devDependencies": {
+    "@types/node": "^18.19.130",
     "@types/vscode": "^1.85.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.4.0"
