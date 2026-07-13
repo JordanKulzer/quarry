@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - 2026-07-12
+### Added
+- Demo GIF in README showing multi-term search workflow
+### Fixed
+- Color coding now consistent per term across all match rows
+- Second term color changed from teal to red for better distinction
+
 ## [0.1.0] - 2026-07-12
 ### Added
 - Multi-term search with color-coded chip UI
