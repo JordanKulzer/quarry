@@ -2,7 +2,7 @@
   "name": "quarry-vscode",
   "displayName": "Quarry",
   "description": "Multi-term codebase search — find files containing all of your search terms, with color-coded chips and snippet previews.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "jordankulzer",
   "categories": [
     "Other"

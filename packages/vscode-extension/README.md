@@ -7,9 +7,9 @@ every file in your workspace that contains all of them. Each result
 shows snippet previews so you can see exactly where each term 
 appears, and clicking any snippet opens the file at that line.
 
-![Quarry demo](media/screenshots/quarry-demo.gif)
+![Quarry demo](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/quarry-demo.gif)
 
-![Quarry home](media/screenshots/home.png)
+![Quarry home](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/home.png)
 
 ## Why Quarry?
 
@@ -19,7 +19,7 @@ files that mention both "auth" and "token" and "expiry", you end
 up running searches one at a time and cross-referencing manually. 
 Quarry does it in one shot.
 
-![Quarry search results](media/screenshots/search.png)
+![Quarry search results](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/search.png)
 
 ## Features
 
@@ -32,7 +32,7 @@ Quarry does it in one shot.
 - Custom exclude patterns so you can skip folders you don't care about
 - Results capped at 150 files to keep things fast
 
-![Quarry select](media/screenshots/select.png)
+![Quarry select](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/select.png)
 
 ## How to use it
 
@@ -42,7 +42,7 @@ Quarry does it in one shot.
 4. Click Search
 5. Click any result to jump to that line
 
-![Quarry menu](media/screenshots/menu.png)
+![Quarry menu](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/menu.png)
 
 ## Tips
 

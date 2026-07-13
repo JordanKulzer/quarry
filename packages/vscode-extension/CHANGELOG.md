@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.3] - 2026-07-12
+### Changed
+- README images now use absolute GitHub URLs so they render everywhere
+
 ## [0.1.2] - 2026-07-12
 ### Changed
 - Rewrote README with clearer copy and better structure
