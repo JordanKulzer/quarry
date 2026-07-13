@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.1.2] - 2026-07-12
+### Changed
+- Rewrote README with clearer copy and better structure
+
 ## [0.1.1] - 2026-07-12
 ### Added
 - Demo GIF in README showing multi-term search workflow
