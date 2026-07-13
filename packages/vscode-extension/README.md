@@ -7,6 +7,8 @@ simultaneously. Not a single pattern — add several concepts as chips
 and Quarry finds every file containing ALL of them, showing exactly 
 where each term appears.
 
+![Quarry demo](media/screenshots/quarry-demo.gif)
+
 ![Quarry home](media/screenshots/home.png)
 
 ![Quarry search results](media/screenshots/search.png)
