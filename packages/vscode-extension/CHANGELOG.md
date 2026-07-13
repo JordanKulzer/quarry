@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.7] - 2026-07-12
+### Changed
+- Exclude patterns now use chip UI with red styling to 
+  clearly communicate exclusion, matching the term chip 
+  interaction pattern
+- Stop button uses a larger outlined square SVG icon
+- Term color palette updated: teal (brand), orange, purple, 
+  amber, pink, blue — all clearly distinct from each other 
+  and from red exclude chips
+
 ## [0.1.6] - 2026-07-12
 ### Changed
 - Stop button restyled to a small square icon next to the 

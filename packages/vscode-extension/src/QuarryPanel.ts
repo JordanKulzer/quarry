@@ -50,8 +50,9 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           break;
         }
         case 'search': {
-          const excludeValue =
-            typeof message.excludePatterns === 'string'
+          const excludeValue = Array.isArray(message.excludePatterns)
+            ? message.excludePatterns.join(', ')
+            : typeof message.excludePatterns === 'string'
               ? message.excludePatterns
               : '';
           await this.context.globalState.update(this.excludeKey, excludeValue);
@@ -116,6 +117,13 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             total: this.resultsCache.length,
             hasMore: this.resultsSent < this.resultsCache.length,
           });
+          break;
+        }
+        case 'saveExcludePatterns': {
+          await this.context.globalState.update(
+            this.excludeKey,
+            typeof message.value === 'string' ? message.value : ''
+          );
           break;
         }
         case 'stopSearch': {
@@ -486,40 +494,37 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
 <body>
   <input id="term-input" type="text" placeholder="Type a term and press Enter…">
   <div id="chips"></div>
-  <div id="exclude-row" style="
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    margin-bottom: 6px;
+  <div style="
     font-size: 11px;
     color: var(--vscode-descriptionForeground);
-  ">
-    <span>Exclude:</span>
-    <input id="exclude-input" type="text"
-      placeholder="node_modules, cache, dist&#8230;"
-      style="
-        width: 100%;
-        box-sizing: border-box;
-        background: var(--vscode-input-background);
-        color: var(--vscode-input-foreground);
-        border: 1px solid var(--vscode-input-border);
-        border-radius: 3px;
-        padding: 2px 6px;
-        font-size: 11px;
-      "
-    />
-    <div style="
-      font-size: 10px;
-      color: var(--vscode-descriptionForeground);
-      margin-top: 2px;
-      opacity: 0.8;
-    ">Comma separated &#8212; e.g. cache, coverage, __tests__</div>
-  </div>
+    margin-bottom: 4px;
+  ">Exclude folders</div>
+  <input id="exclude-input" type="text"
+    placeholder="Add folder to exclude..."
+    style="
+      width: 100%;
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      border: 1px solid var(--vscode-input-border);
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
+      box-sizing: border-box;
+      margin-bottom: 4px;
+    "
+  />
+  <div id="exclude-chips" style="
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-height: 0;
+  "></div>
   <div id="search-row" style="display: flex; align-items: stretch; gap: 4px;">
     <button id="search-button" style="flex: 1;">Search</button>
     <button id="stop-btn" title="Stop search" style="
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       flex-shrink: 0;
       background: transparent;
       border: 1px solid var(--vscode-input-border);
@@ -528,7 +533,10 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       cursor: pointer;
       font-size: 10px;
       display: none;
-    ">&#9632;</button>
+    "><svg width="12" height="12" viewBox="0 0 12 12"
+        fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="1" y="1" width="10" height="10" rx="1"/>
+    </svg></button>
   </div>
   <div id="status-row">
     <span id="pickaxe">&#x26CF;&#xFE0F;</span>
@@ -567,12 +575,12 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   <script>
     (function () {
       var TERM_COLORS = [
-        { bg: 'rgba(59, 130, 246, 0.25)', border: 'rgba(59, 130, 246, 0.6)', text: '#93c5fd' },
-        { bg: 'rgba(252, 165, 165, 0.25)', border: 'rgba(252, 165, 165, 0.6)', text: '#fca5a5' },
-        { bg: 'rgba(245, 158, 11, 0.25)', border: 'rgba(245, 158, 11, 0.6)', text: '#fcd34d' },
-        { bg: 'rgba(168, 85, 247, 0.25)', border: 'rgba(168, 85, 247, 0.6)', text: '#d8b4fe' },
-        { bg: 'rgba(236, 72, 153, 0.25)', border: 'rgba(236, 72, 153, 0.6)', text: '#f9a8d4' },
-        { bg: 'rgba(34, 197, 94, 0.25)',  border: 'rgba(34, 197, 94, 0.6)',  text: '#86efac' },
+        { bg: 'rgba(94, 234, 212, 0.25)', border: 'rgba(94, 234, 212, 0.6)', text: '#5eead4' },
+        { bg: 'rgba(253, 186, 116, 0.25)', border: 'rgba(253, 186, 116, 0.6)', text: '#fdba74' },
+        { bg: 'rgba(216, 180, 254, 0.25)', border: 'rgba(216, 180, 254, 0.6)', text: '#d8b4fe' },
+        { bg: 'rgba(252, 211, 77, 0.25)', border: 'rgba(252, 211, 77, 0.6)', text: '#fcd34d' },
+        { bg: 'rgba(249, 168, 212, 0.25)', border: 'rgba(249, 168, 212, 0.6)', text: '#f9a8d4' },
+        { bg: 'rgba(147, 197, 253, 0.25)', border: 'rgba(147, 197, 253, 0.6)', text: '#93c5fd' },
       ];
       function termColor(index) {
         return TERM_COLORS[index % TERM_COLORS.length];
@@ -581,6 +589,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var vscode = acquireVsCodeApi();
       var input = document.getElementById('term-input');
       var excludeInput = document.getElementById('exclude-input');
+      var excludeChipsEl = document.getElementById('exclude-chips');
       var searchTipEl = document.getElementById('search-tip');
       var chipsEl = document.getElementById('chips');
       var searchButton = document.getElementById('search-button');
@@ -591,6 +600,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var emptyStateEl = document.getElementById('empty-state');
 
       var terms = [];
+      var excludeTerms = [];
       var results = null;
       var total = 0;
       var hasMore = false;
@@ -658,6 +668,71 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           chipsEl.appendChild(clear);
         }
       }
+
+      function saveExcludes() {
+        vscode.postMessage({
+          command: 'saveExcludePatterns',
+          value: excludeTerms.join(', '),
+        });
+      }
+
+      function addExcludeTerm(raw) {
+        var value = raw.trim();
+        if (value && excludeTerms.indexOf(value) === -1) {
+          excludeTerms.push(value);
+          renderExcludeChips();
+          saveExcludes();
+        }
+      }
+
+      function renderExcludeChips() {
+        excludeChipsEl.textContent = '';
+        excludeTerms.forEach(function (term, index) {
+          var chip = document.createElement('span');
+          chip.style.background = 'rgba(239, 68, 68, 0.15)';
+          chip.style.border = '1px solid rgba(239, 68, 68, 0.5)';
+          chip.style.color = '#fca5a5';
+          chip.style.borderRadius = '12px';
+          chip.style.padding = '2px 8px';
+          chip.style.fontSize = '11px';
+          chip.style.display = 'flex';
+          chip.style.alignItems = 'center';
+          chip.style.gap = '4px';
+          var text = document.createElement('span');
+          text.style.overflow = 'hidden';
+          text.style.textOverflow = 'ellipsis';
+          text.style.whiteSpace = 'nowrap';
+          text.textContent = term;
+          var remove = document.createElement('button');
+          remove.textContent = '\\u00d7';
+          remove.title = 'Remove exclude';
+          remove.style.border = 'none';
+          remove.style.background = 'none';
+          remove.style.color = '#fca5a5';
+          remove.style.cursor = 'pointer';
+          remove.style.padding = '0';
+          remove.style.fontSize = '1em';
+          remove.style.lineHeight = '1';
+          remove.addEventListener('click', function () {
+            excludeTerms.splice(index, 1);
+            renderExcludeChips();
+            saveExcludes();
+          });
+          chip.appendChild(text);
+          chip.appendChild(remove);
+          excludeChipsEl.appendChild(chip);
+        });
+      }
+
+      excludeInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          addExcludeTerm(excludeInput.value);
+          excludeInput.value = '';
+        } else if (event.key === 'Escape') {
+          excludeInput.value = '';
+        }
+      });
 
       function clearResults() {
         results = null;
@@ -950,7 +1025,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           command: 'search',
           terms: terms.slice(),
           caseSensitive: caseSensitive,
-          excludePatterns: excludeInput.value,
+          excludePatterns: excludeTerms.slice(),
         });
       }
 
@@ -989,7 +1064,11 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         } else if (message.command === 'setCaseSensitive') {
           caseSensitive = !!message.value;
         } else if (message.command === 'setExcludePatterns') {
-          excludeInput.value = message.value || '';
+          excludeTerms = String(message.value || '')
+            .split(',')
+            .map(function (p) { return p.trim(); })
+            .filter(Boolean);
+          renderExcludeChips();
         } else if (message.command === 'scanCount') {
           statusEl.textContent =
             'Scanning ' + message.count.toLocaleString() + ' files\\u2026';
