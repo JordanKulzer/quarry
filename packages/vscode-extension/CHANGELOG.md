@@ -2,24 +2,21 @@
 
 ## [0.3.0] - 2026-07-13
 ### Added
-- File type filter — restrict search to specific 
-  extensions (ts, tsx, py, etc.)
-- Workspace folder filter — in multi-root workspaces, 
-  search a specific root or all roots
-- Zero results empty state with helpful suggestions
+- File type filter to restrict search to specific 
+  extensions (ts, tsx, py, and so on)
+- Workspace folder filter for picking one root or all 
+  roots in multi-root workspaces
+- Empty state with suggestions when a search finds nothing
 ### Changed
-- Stop button now shows full "Stop search" label 
-  for better discoverability
-- Snippet rows no longer show redundant term label — 
-  color coding communicates term identity
-- Snippets now truncate with ellipsis instead of 
-  wrapping — drag sidebar to reveal more
-- Exclude and file type inputs grouped in a collapsible 
-  Options section, collapsed by default and auto-expanded 
-  when saved values exist
-- Consistent focus border styling across all inputs
-- Snippet left border thicker and full opacity for 
-  clearer term identification
+- Stop button now shows a full "Stop search" label
+- Snippet rows dropped the term label since the color 
+  coding already identifies the term
+- Snippets truncate with an ellipsis instead of wrapping; 
+  drag the sidebar wider to see more
+- Exclude and file type inputs moved into a collapsible 
+  Options section that starts collapsed
+- All inputs share the same focus border styling
+- Snippet left border is thicker and full opacity
 
 ## [0.2.3] - 2026-07-13
 ### Changed
@@ -41,8 +38,8 @@
 
 ## [0.2.0] - 2026-07-12
 ### Changed
-- Rewrote search engine to use ripgrep for dramatically 
-  faster search on large workspaces
+- Rewrote search engine to use ripgrep for much faster 
+  search on large workspaces
 - Search now runs in under a second on most repos regardless 
   of size
 - Ripgrep respects .gitignore automatically
@@ -55,13 +52,12 @@
 
 ## [0.1.7] - 2026-07-12
 ### Changed
-- Exclude patterns now use chip UI with red styling to 
-  clearly communicate exclusion, matching the term chip 
-  interaction pattern
+- Exclude patterns now use red chips so they read as 
+  exclusions at a glance
 - Stop button uses a larger outlined square SVG icon
-- Term color palette updated: teal (brand), orange, purple, 
-  amber, pink, blue — all clearly distinct from each other 
-  and from red exclude chips
+- Term color palette updated: teal, orange, purple, amber, 
+  pink, blue, all distinct from each other and from the 
+  red exclude chips
 
 ## [0.1.6] - 2026-07-12
 ### Changed

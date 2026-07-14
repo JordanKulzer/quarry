@@ -742,17 +742,14 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       wireFocusBorder(excludeInput);
       wireFocusBorder(fileTypeInput);
 
-      // Always start collapsed; the setExcludePatterns / setFileTypes
-      // restore messages auto-expand when saved values exist.
+      // Options always starts collapsed (HTML default is display: none).
+      // Only the toggle click opens it.
       var optionsOpen = false;
 
       function setOptionsOpen(open) {
         optionsOpen = open;
         optionsBody.style.display = open ? 'block' : 'none';
         optionsChevron.textContent = open ? '\\u2304' : '\\u203a';
-        var state = vscode.getState() || {};
-        state.optionsOpen = open;
-        vscode.setState(state);
       }
 
       optionsToggle.addEventListener('click', function () {
@@ -842,9 +839,6 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           command: 'saveExcludePatterns',
           value: excludeTerms.join(', '),
         });
-        var state = vscode.getState() || {};
-        state.excludeChips = excludeTerms.slice();
-        vscode.setState(state);
       }
 
       function addExcludeTerm(raw) {
@@ -1196,9 +1190,6 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         }, 5000);
         stopBtn.style.display = 'block';
         noResultsEl.style.display = 'none';
-        var searchState = vscode.getState() || {};
-        searchState.fileTypes = fileTypeInput.value;
-        vscode.setState(searchState);
         vscode.postMessage({
           command: 'search',
           terms: terms.slice(),
@@ -1249,14 +1240,8 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             .map(function (p) { return p.trim(); })
             .filter(Boolean);
           renderExcludeChips();
-          if (excludeTerms.length > 0) {
-            setOptionsOpen(true);
-          }
         } else if (message.command === 'setFileTypes') {
           fileTypeInput.value = message.value || '';
-          if (fileTypeInput.value) {
-            setOptionsOpen(true);
-          }
         } else if (message.command === 'setWorkspaceFolders') {
           var folders = message.folders || [];
           workspaceSelect.textContent = '';
@@ -1284,15 +1269,6 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       });
 
       renderChips();
-      // Options starts collapsed (HTML default is display: none, chevron
-      // \\u203a). Expand ONLY when saved state justifies it — never else.
-      var savedState = vscode.getState() || {};
-      var hasExcludes = (savedState.excludeChips || []).length > 0;
-      var hasFileTypes = (savedState.fileTypes || '').length > 0;
-      var optionsWasOpen = savedState.optionsOpen === true;
-      if (hasExcludes || hasFileTypes || optionsWasOpen) {
-        setOptionsOpen(true);
-      }
       statusEl.textContent = 'Add terms above, then search.';
       vscode.postMessage({ command: 'ready' });
     })();

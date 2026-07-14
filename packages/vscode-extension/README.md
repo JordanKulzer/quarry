@@ -3,10 +3,10 @@
 Add multiple search terms, find every file containing all of them, 
 and jump straight to the matching lines.
 
-Add terms as color-coded chips, run a search, and Quarry shows 
-every file in your workspace that contains all of them. Each result 
-shows snippet previews so you can see exactly where each term 
-appears, and clicking any snippet opens the file at that line.
+Type a term, press Enter to turn it into a chip, add a few more, 
+and run one search. Every result shows snippet previews so you 
+can see where each term appears, and clicking a snippet opens 
+the file at that line.
 
 ![Quarry demo](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/quarry-demo.gif)
 
@@ -63,12 +63,12 @@ Report bugs at github.com/JordanKulzer/quarry/issues
 ### 0.3.0
 - File type filter to restrict search to specific extensions
 - Workspace folder filter for multi-root workspaces
-- Zero results empty state with helpful suggestions
-- Exclude and file type inputs grouped in a collapsible 
+- Empty state with suggestions when a search finds nothing
+- Exclude and file type inputs moved into a collapsible 
   Options section
-- Stop button now a full width labeled button
-- Snippet rows drop the redundant term label and truncate 
-  with ellipsis instead of wrapping
+- Stop button is now a full width labeled button
+- Snippet rows dropped the term label and truncate with an 
+  ellipsis instead of wrapping
 
 ### 0.2.3
 - Removed diagnostic logging from ripgrep binary discovery
@@ -81,18 +81,17 @@ Report bugs at github.com/JordanKulzer/quarry/issues
 - Added diagnostic logging to ripgrep binary discovery
 
 ### 0.2.0
-- Rewrote the search engine to use ripgrep for dramatically 
-  faster search on large workspaces
+- Rewrote the search engine to use ripgrep for much faster 
+  search on large workspaces
 - Search terms run in parallel and results are intersected
 - Falls back to the previous file scanner if ripgrep is 
   not available
 
 ### 0.1.7
-- Exclude patterns now use a chip UI with red styling to 
-  clearly communicate exclusion, matching the term chip 
-  interaction pattern
-- Stop button uses a larger outlined square SVG icon
-- Term color palette updated: teal (brand), orange, purple, 
+- Exclude patterns now use red chips so they read as 
+  exclusions at a glance
+- Stop button uses a larger outlined square icon
+- Term color palette updated: teal, orange, purple, 
   amber, pink, blue
 
 ### 0.1.6
