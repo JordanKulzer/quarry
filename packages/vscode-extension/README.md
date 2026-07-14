@@ -25,12 +25,16 @@ Quarry does it in one shot.
 ## Features
 
 - Add multiple search terms as color-coded chips
+- Powered by ripgrep, so search stays fast even on huge repos
 - See up to 5 matches per term per file, with snippet previews
 - Click any match to open the file at that exact line
 - Matched word highlights in the editor for a few seconds
+- Filter by file type (ts, tsx, py, and so on) via the Options section
+- Exclude folders with red chips so large directories get skipped
+- In multi-root workspaces, search one folder or all of them
+- Stop a slow search anytime and keep the partial results
 - Search history saved across sessions, one click to re-run
 - Case sensitive search via the options menu
-- Custom exclude patterns so you can skip folders you don't care about
 - Results capped at 150 files to keep things fast
 
 ![Quarry select](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/select.png)
@@ -57,6 +61,19 @@ Quarry does it in one shot.
 Report bugs at github.com/JordanKulzer/quarry/issues
 
 ## Release Notes
+
+### 0.3.0
+- File type filter to restrict search to specific extensions
+- Workspace folder filter for multi-root workspaces
+- Zero results empty state with helpful suggestions
+- Exclude and file type inputs grouped in a collapsible 
+  Options section
+- Stop button now a full width labeled button
+- Snippet rows drop the redundant term label and truncate 
+  with ellipsis instead of wrapping
+
+### 0.2.3
+- Removed diagnostic logging from ripgrep binary discovery
 
 ### 0.2.2
 - Ripgrep discovery now checks all known binary locations 

@@ -312,6 +312,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       border: 1px solid var(--vscode-input-border, transparent);
       border-radius: 2px;
       outline: none;
+      transition: border-color 0.1s;
       font-family: inherit;
       font-size: inherit;
     }
@@ -578,40 +579,23 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   "></select>
   <input id="term-input" type="text" placeholder="Type a term and press Enter…">
   <div id="chips"></div>
-  <div style="
+  <div id="options-toggle" style="
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
     font-size: 11px;
     color: var(--vscode-descriptionForeground);
-    margin-bottom: 4px;
-  ">Exclude folders</div>
-  <input id="exclude-input" type="text"
-    placeholder="Add folder to exclude..."
-    style="
-      width: 100%;
-      background: var(--vscode-input-background);
-      color: var(--vscode-input-foreground);
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 3px;
-      padding: 4px 8px;
-      font-size: 12px;
-      box-sizing: border-box;
-      margin-bottom: 4px;
-    "
-  />
-  <div id="exclude-chips" style="
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 8px;
-    min-height: 0;
-  "></div>
-  <div style="margin-bottom: 8px;">
-    <div style="
-      font-size: 11px;
-      color: var(--vscode-descriptionForeground);
-      margin-bottom: 4px;
-    ">File types</div>
-    <input id="filetype-input" type="text"
-      placeholder="ts, tsx, js, py &#8212; leave empty for all"
+    margin-bottom: 6px;
+    user-select: none;
+    padding: 2px 0;
+  ">
+    <span>Options</span>
+    <span id="options-chevron">&#9656;</span>
+  </div>
+  <div id="options-body" style="display: none;">
+    <input id="exclude-input" type="text"
+      placeholder="Add folder to exclude..."
       style="
         width: 100%;
         background: var(--vscode-input-background);
@@ -621,13 +605,40 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         padding: 4px 8px;
         font-size: 12px;
         box-sizing: border-box;
+        margin-bottom: 4px;
+        outline: none;
+        transition: border-color 0.1s;
       "
     />
+    <div id="exclude-chips" style="
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+      min-height: 0;
+    "></div>
+    <div style="margin-bottom: 8px;">
+      <input id="filetype-input" type="text"
+        placeholder="ts, tsx, js, py (empty = all types)"
+        style="
+          width: 100%;
+          background: var(--vscode-input-background);
+          color: var(--vscode-input-foreground);
+          border: 1px solid var(--vscode-input-border);
+          border-radius: 3px;
+          padding: 4px 8px;
+          font-size: 12px;
+          box-sizing: border-box;
+          outline: none;
+          transition: border-color 0.1s;
+        "
+      />
+    </div>
   </div>
   <button id="search-button">Search</button>
   <button id="stop-btn" style="
     width: 100%;
-    padding: 4px;
+    padding: 5px;
     background: transparent;
     color: var(--vscode-errorForeground);
     border: 1px solid var(--vscode-errorForeground);
@@ -715,6 +726,38 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var fileTypeInput = document.getElementById('filetype-input');
       var workspaceSelect = document.getElementById('workspace-select');
       var noResultsEl = document.getElementById('no-results-state');
+      var optionsToggle = document.getElementById('options-toggle');
+      var optionsBody = document.getElementById('options-body');
+      var optionsChevron = document.getElementById('options-chevron');
+
+      function wireFocusBorder(el) {
+        el.addEventListener('focus', function () {
+          el.style.borderColor = 'var(--vscode-focusBorder)';
+        });
+        el.addEventListener('blur', function () {
+          el.style.borderColor = 'var(--vscode-input-border)';
+        });
+      }
+      wireFocusBorder(input);
+      wireFocusBorder(excludeInput);
+      wireFocusBorder(fileTypeInput);
+
+      // Always start collapsed; the setExcludePatterns / setFileTypes
+      // restore messages auto-expand when saved values exist.
+      var optionsOpen = false;
+
+      function setOptionsOpen(open) {
+        optionsOpen = open;
+        optionsBody.style.display = open ? 'block' : 'none';
+        optionsChevron.textContent = open ? '\\u25be' : '\\u25b8';
+        var state = vscode.getState() || {};
+        state.optionsOpen = open;
+        vscode.setState(state);
+      }
+
+      optionsToggle.addEventListener('click', function () {
+        setOptionsOpen(!optionsOpen);
+      });
       var searchTipEl = document.getElementById('search-tip');
       var chipsEl = document.getElementById('chips');
       var searchButton = document.getElementById('search-button');
@@ -1047,7 +1090,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             var color = colorForTerm(match.term);
             var line = document.createElement('div');
             line.className = 'match-line';
-            line.style.borderLeft = '2px solid ' + color.border;
+            line.style.borderLeft = '3px solid ' + color.text;
             line.title = 'Open at line ' + match.lineNumber;
             var lineLabel = document.createElement('span');
             lineLabel.textContent = 'line ' + match.lineNumber + ': ';
@@ -1200,8 +1243,14 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             .map(function (p) { return p.trim(); })
             .filter(Boolean);
           renderExcludeChips();
+          if (excludeTerms.length > 0) {
+            setOptionsOpen(true);
+          }
         } else if (message.command === 'setFileTypes') {
           fileTypeInput.value = message.value || '';
+          if (fileTypeInput.value) {
+            setOptionsOpen(true);
+          }
         } else if (message.command === 'setWorkspaceFolders') {
           var folders = message.folders || [];
           workspaceSelect.textContent = '';
@@ -1229,6 +1278,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       });
 
       renderChips();
+      setOptionsOpen(false);
       statusEl.textContent = 'Add terms above, then search.';
       vscode.postMessage({ command: 'ready' });
     })();

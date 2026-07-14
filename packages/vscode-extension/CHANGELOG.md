@@ -14,6 +14,12 @@
   color coding communicates term identity
 - Snippets now truncate with ellipsis instead of 
   wrapping — drag sidebar to reveal more
+- Exclude and file type inputs grouped in a collapsible 
+  Options section, collapsed by default and auto-expanded 
+  when saved values exist
+- Consistent focus border styling across all inputs
+- Snippet left border thicker and full opacity for 
+  clearer term identification
 
 ## [0.2.3] - 2026-07-13
 ### Changed
