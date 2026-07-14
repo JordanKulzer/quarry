@@ -6,6 +6,7 @@ export interface RipgrepEngineOptions {
   terms: string[];
   caseSensitive: boolean;
   excludePatterns: string[];
+  fileTypes: string[];
   shouldCancel: () => boolean;
 }
 
@@ -34,6 +35,7 @@ export class RipgrepSearchEngine {
           .searchTerm(term, this.workspacePath, {
             caseSensitive: options.caseSensitive,
             excludePatterns: options.excludePatterns,
+            fileTypes: options.fileTypes,
             rgPath: this.rgPath,
           })
           // A term whose rg process fails to spawn contributes no files,

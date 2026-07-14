@@ -7,6 +7,7 @@ const MAX_SNIPPET_LENGTH = 200;
 export interface RipgrepSearchOptions {
   caseSensitive: boolean;
   excludePatterns: string[];
+  fileTypes: string[];
   rgPath: string;
 }
 
@@ -38,6 +39,10 @@ export class RipgrepScanner {
     if (!options.caseSensitive) {
       args.push('--ignore-case');
     }
+    options.fileTypes.forEach((ext) => {
+      const clean = ext.replace(/^\./, '');
+      args.push('--glob', `*.${clean}`);
+    });
     const allExcludes = [...DEFAULT_EXCLUDES, ...options.excludePatterns];
     allExcludes.forEach((p) => args.push('--glob', `!${p}`));
     args.push('--', term, workspacePath);

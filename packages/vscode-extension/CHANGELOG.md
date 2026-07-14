@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] - 2026-07-13
+### Added
+- File type filter — restrict search to specific 
+  extensions (ts, tsx, py, etc.)
+- Workspace folder filter — in multi-root workspaces, 
+  search a specific root or all roots
+- Zero results empty state with helpful suggestions
+### Changed
+- Stop button now shows full "Stop search" label 
+  for better discoverability
+- Snippet rows no longer show redundant term label — 
+  color coding communicates term identity
+- Snippets now truncate with ellipsis instead of 
+  wrapping — drag sidebar to reveal more
+
 ## [0.2.3] - 2026-07-13
 ### Changed
 - Removed diagnostic logging from ripgrep binary discovery;

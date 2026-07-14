@@ -14,9 +14,10 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
   private resultsSent = 0;
   readonly historyKey = 'quarry.searchHistory';
   readonly excludeKey = 'quarry.excludePatterns';
+  readonly fileTypesKey = 'quarry.fileTypes';
   caseSensitive = false;
   private isCancelled = false;
-  private activeRipgrepEngine: RipgrepSearchEngine | null = null;
+  private activeRipgrepEngines: RipgrepSearchEngine[] = [];
   private view?: vscode.WebviewView;
 
   constructor(
@@ -50,6 +51,20 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             command: 'setExcludePatterns',
             value: this.getSavedExcludePatterns(),
           });
+          webviewView.webview.postMessage({
+            command: 'setFileTypes',
+            value: this.context.globalState.get<string>(this.fileTypesKey, ''),
+          });
+          const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+          if (workspaceFolders.length > 1) {
+            webviewView.webview.postMessage({
+              command: 'setWorkspaceFolders',
+              folders: workspaceFolders.map((f) => ({
+                name: f.name,
+                path: f.uri.fsPath,
+              })),
+            });
+          }
           break;
         }
         case 'search': {
@@ -63,29 +78,57 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             .split(',')
             .map((p: string) => p.trim())
             .filter(Boolean);
+          const fileTypesValue =
+            typeof message.fileTypes === 'string' ? message.fileTypes : '';
+          await this.context.globalState.update(this.fileTypesKey, fileTypesValue);
+          const fileTypes = fileTypesValue
+            .split(',')
+            .map((t: string) => t.trim())
+            .filter(Boolean);
+          const selectedFolder =
+            typeof message.workspaceFolder === 'string' && message.workspaceFolder
+              ? message.workspaceFolder
+              : null;
           this.isCancelled = false;
-          const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+          const allRoots = (vscode.workspace.workspaceFolders ?? []).map(
+            (f) => f.uri.fsPath
+          );
+          const searchRoots = selectedFolder ? [selectedFolder] : allRoots;
           const rgPath = findRipgrepBinary();
-          if (rgPath && workspaceFolder) {
+          if (rgPath && searchRoots.length > 0) {
             console.log('Quarry: using ripgrep at', rgPath);
-            this.activeRipgrepEngine = new RipgrepSearchEngine(
-              rgPath,
-              workspaceFolder.uri.fsPath
+            this.activeRipgrepEngines = searchRoots.map(
+              (root) => new RipgrepSearchEngine(rgPath, root)
             );
             try {
-              this.resultsCache = await this.activeRipgrepEngine.search({
-                terms: message.terms,
-                caseSensitive: !!message.caseSensitive,
-                excludePatterns,
-                shouldCancel: () => this.isCancelled,
-              });
+              const perRoot = await Promise.all(
+                this.activeRipgrepEngines.map((engine) =>
+                  engine.search({
+                    terms: message.terms,
+                    caseSensitive: !!message.caseSensitive,
+                    excludePatterns,
+                    fileTypes,
+                    shouldCancel: () => this.isCancelled,
+                  })
+                )
+              );
+              this.resultsCache = perRoot.flat();
+              if (searchRoots.length > 1) {
+                const avgLine = (r: SearchResult) =>
+                  r.matches.reduce((s, m) => s + m.lineNumber, 0) /
+                  (r.matches.length || 1);
+                this.resultsCache.sort((a, b) => avgLine(a) - avgLine(b));
+              }
             } finally {
-              this.activeRipgrepEngine = null;
+              this.activeRipgrepEngines = [];
             }
           } else {
             console.log('Quarry: using fallback scanner');
-            const scanner = new VscodeFileScanner(excludePatterns);
-            const files = await scanner.getFiles();
+            const scanner = new VscodeFileScanner(excludePatterns, fileTypes);
+            let files = await scanner.getFiles();
+            if (selectedFolder) {
+              files = files.filter((f) => f.path.startsWith(selectedFolder));
+            }
             webviewView.webview.postMessage({
               command: 'scanCount',
               count: files.length,
@@ -152,7 +195,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         }
         case 'stopSearch': {
           this.isCancelled = true;
-          this.activeRipgrepEngine?.cancel();
+          this.activeRipgrepEngines.forEach((engine) => engine.cancel());
           break;
         }
         case 'loadMore': {
@@ -503,7 +546,9 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       padding: 3px 6px;
       border-radius: 2px;
       font-size: 12px;
-      overflow-wrap: anywhere;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       cursor: pointer;
     }
     .match-line:hover {
@@ -512,11 +557,25 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
     .match-snippet {
       font-family: var(--vscode-editor-font-family, monospace);
       color: var(--vscode-descriptionForeground);
-      white-space: pre-wrap;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </head>
 <body>
+  <select id="workspace-select" style="
+    width: 100%;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    box-sizing: border-box;
+    margin-bottom: 6px;
+    display: none;
+  "></select>
   <input id="term-input" type="text" placeholder="Type a term and press Enter…">
   <div id="chips"></div>
   <div style="
@@ -545,24 +604,39 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
     margin-bottom: 8px;
     min-height: 0;
   "></div>
-  <div id="search-row" style="display: flex; align-items: stretch; gap: 4px;">
-    <button id="search-button" style="flex: 1;">Search</button>
-    <button id="stop-btn" title="Stop search" style="
-      width: 32px;
-      height: 32px;
-      flex-shrink: 0;
-      background: transparent;
-      border: 1px solid var(--vscode-input-border);
-      border-radius: 3px;
-      color: var(--vscode-foreground);
-      cursor: pointer;
-      font-size: 10px;
-      display: none;
-    "><svg width="12" height="12" viewBox="0 0 12 12"
-        fill="none" stroke="currentColor" stroke-width="1.5">
-      <rect x="1" y="1" width="10" height="10" rx="1"/>
-    </svg></button>
+  <div style="margin-bottom: 8px;">
+    <div style="
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      margin-bottom: 4px;
+    ">File types</div>
+    <input id="filetype-input" type="text"
+      placeholder="ts, tsx, js, py &#8212; leave empty for all"
+      style="
+        width: 100%;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        border-radius: 3px;
+        padding: 4px 8px;
+        font-size: 12px;
+        box-sizing: border-box;
+      "
+    />
   </div>
+  <button id="search-button">Search</button>
+  <button id="stop-btn" style="
+    width: 100%;
+    padding: 4px;
+    background: transparent;
+    color: var(--vscode-errorForeground);
+    border: 1px solid var(--vscode-errorForeground);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    display: none;
+    margin-top: 4px;
+  ">Stop search</button>
   <div id="status-row">
     <span id="pickaxe">&#x26CF;&#xFE0F;</span>
     <span id="status"></span>
@@ -596,6 +670,29 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       containing all of them.
     </div>
   </div>
+  <div id="no-results-state" style="
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    gap: 8px;
+    opacity: 0.7;
+  ">
+    <div style="font-size: 32px;">&#x26CF;</div>
+    <div style="
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--vscode-foreground);
+    ">No files found</div>
+    <div style="
+      font-size: 11px;
+      color: var(--vscode-descriptionForeground);
+      line-height: 1.5;
+    ">Try fewer terms, check your spelling, or
+    adjust your exclude patterns.</div>
+  </div>
   <div id="results"></div>
   <script>
     (function () {
@@ -615,6 +712,9 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
       var input = document.getElementById('term-input');
       var excludeInput = document.getElementById('exclude-input');
       var excludeChipsEl = document.getElementById('exclude-chips');
+      var fileTypeInput = document.getElementById('filetype-input');
+      var workspaceSelect = document.getElementById('workspace-select');
+      var noResultsEl = document.getElementById('no-results-state');
       var searchTipEl = document.getElementById('search-tip');
       var chipsEl = document.getElementById('chips');
       var searchButton = document.getElementById('search-button');
@@ -766,6 +866,7 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         capped = false;
         collapseAllBtn = null;
         resultsEl.textContent = '';
+        noResultsEl.style.display = 'none';
         statusEl.textContent = 'Add terms above, then search.';
         updateEmptyState();
       }
@@ -827,8 +928,9 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
         if (!results) {
           return;
         }
+        noResultsEl.style.display = results.length === 0 ? 'flex' : 'none';
         if (results.length === 0) {
-          statusEl.textContent = 'No files matched all terms.';
+          statusEl.textContent = '';
           return;
         }
         var termColorMap = {};
@@ -947,12 +1049,13 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             line.className = 'match-line';
             line.style.borderLeft = '2px solid ' + color.border;
             line.title = 'Open at line ' + match.lineNumber;
-            var termLabel = document.createElement('span');
-            termLabel.textContent = '"' + match.term + '" \\u2192 line ' + match.lineNumber + ': ';
+            var lineLabel = document.createElement('span');
+            lineLabel.textContent = 'line ' + match.lineNumber + ': ';
+            lineLabel.style.color = 'var(--vscode-descriptionForeground)';
             var snippet = document.createElement('span');
             snippet.className = 'match-snippet';
             appendHighlighted(snippet, match.snippet, match.term, color);
-            line.appendChild(termLabel);
+            line.appendChild(lineLabel);
             line.appendChild(snippet);
             line.addEventListener('click', function () {
               vscode.postMessage({
@@ -1046,11 +1149,14 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
           if (searchTipEl) searchTipEl.style.display = 'block';
         }, 5000);
         stopBtn.style.display = 'block';
+        noResultsEl.style.display = 'none';
         vscode.postMessage({
           command: 'search',
           terms: terms.slice(),
           caseSensitive: caseSensitive,
           excludePatterns: excludeTerms.slice(),
+          fileTypes: fileTypeInput.value,
+          workspaceFolder: workspaceSelect.value || null,
         });
       }
 
@@ -1094,6 +1200,22 @@ export class QuarryPanel implements vscode.WebviewViewProvider {
             .map(function (p) { return p.trim(); })
             .filter(Boolean);
           renderExcludeChips();
+        } else if (message.command === 'setFileTypes') {
+          fileTypeInput.value = message.value || '';
+        } else if (message.command === 'setWorkspaceFolders') {
+          var folders = message.folders || [];
+          workspaceSelect.textContent = '';
+          var allOption = document.createElement('option');
+          allOption.value = '';
+          allOption.textContent = 'All folders';
+          workspaceSelect.appendChild(allOption);
+          folders.forEach(function (folder) {
+            var option = document.createElement('option');
+            option.value = folder.path;
+            option.textContent = folder.name;
+            workspaceSelect.appendChild(option);
+          });
+          workspaceSelect.style.display = 'block';
         } else if (message.command === 'scanCount') {
           statusEl.textContent =
             'Scanning ' + message.count.toLocaleString() + ' files\\u2026';

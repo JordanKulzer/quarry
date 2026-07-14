@@ -15,20 +15,24 @@ function toGlobParts(pattern: string): string[] {
 
 export class VscodeFileScanner implements FileScanner {
   private readonly excludeGlob: string;
+  private readonly includeGlob: string;
 
-  constructor(extraExcludes: string[] = []) {
+  constructor(extraExcludes: string[] = [], fileTypes: string[] = []) {
     const merged = [
       ...DEFAULT_EXCLUDES,
       ...extraExcludes.filter((p) => !DEFAULT_EXCLUDES.includes(p)),
     ];
     this.excludeGlob = `{${merged.flatMap(toGlobParts).join(',')}}`;
+    const cleanTypes = fileTypes.map((t) => t.replace(/^\./, '')).filter(Boolean);
+    this.includeGlob =
+      cleanTypes.length > 0 ? `**/*.{${cleanTypes.join(',')}}` : '**/*';
   }
 
   async getFiles(): Promise<FileCandidate[]> {
     if (!vscode.workspace.workspaceFolders?.length) {
       return [];
     }
-    const uris = await vscode.workspace.findFiles('**/*', this.excludeGlob);
+    const uris = await vscode.workspace.findFiles(this.includeGlob, this.excludeGlob);
     return uris.map((uri) => ({
       path: uri.fsPath,
       relativePath: vscode.workspace.asRelativePath(uri),

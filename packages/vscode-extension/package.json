@@ -2,7 +2,7 @@
   "name": "quarry-vscode",
   "displayName": "Quarry",
   "description": "Add multiple search terms, find every file containing all of them, and jump straight to the matching lines.",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "publisher": "jordankulzer",
   "categories": [
     "Other"
