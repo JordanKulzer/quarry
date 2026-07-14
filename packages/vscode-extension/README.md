@@ -37,8 +37,6 @@ Quarry does it in one shot.
 - Case sensitive search via the options menu
 - Results capped at 150 files to keep things fast
 
-![Quarry select](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/select.png)
-
 ## How to use it
 
 1. Click the Quarry pickaxe icon in the Activity Bar
@@ -47,7 +45,7 @@ Quarry does it in one shot.
 4. Click Search
 5. Click any result to jump to that line
 
-![Quarry menu](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/menu.png)
+![Quarry options and menu](https://raw.githubusercontent.com/JordanKulzer/quarry/main/packages/vscode-extension/media/screenshots/options.png)
 
 ## Tips
 
